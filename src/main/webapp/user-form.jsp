@@ -13,7 +13,7 @@
             <header>
                 <nav class="navbar navbar-expand-md navbar-dark" style="background-color: black">
                     <div>
-                        <a href="https://www.javaguides.net" class="navbar-brand"> Mailbook </a>
+                        <a href="https://github.com/PIYUSH-MISHRA-00/Mailbook" class="navbar-brand"> Mailbook </a>
                     </div>
 
                     <ul class="navbar-nav">
