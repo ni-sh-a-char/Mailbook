@@ -1,206 +1,215 @@
-# 📬 Mailbook  
-**A JSP‑JDBC‑MySQL‑Servlet based Java project to demonstrate CRUD operations where users can create, read, update and delete their name, email and country.**  
+# Mailbook  
+**A JSP‑JDBC‑MySQL‑Servlet based Java project to demonstrate CRUD operations where users can create, update, edit and delete their name, email and country respectively.**  
 
 ---  
 
-## Table of Contents
-1. [Prerequisites](#prerequisites)  
-2. [Installation](#installation)  
-3. [Configuration](#configuration)  
-4. [Running the Application](#running-the-application)  
-5. [Usage (Web UI)](#usage-web-ui)  
-6. [API Documentation](#api-documentation)  
-7. [Examples (cURL & UI Walk‑through)](#examples)  
-8. [Project Structure](#project-structure)  
-9. [Troubleshooting & FAQ](#troubleshooting--faq)  
-10. [Contributing](#contributing)  
-11. [License](#license)  
+## Table of Contents  
+
+| # | Section |
+|---|---------|
+| 1 | [Project Overview](#1-project-overview) |
+| 2 | [Prerequisites](#2-prerequisites) |
+| 3 | [Installation](#3-installation) |
+| 4 | [Configuration](#4-configuration) |
+| 5 | [Running the Application](#5-running-the-application) |
+| 6 | [Usage (Web UI)](#6-usage-web-ui) |
+| 7 | [API Documentation](#7-api-documentation) |
+| 8 | [Examples (cURL & JavaScript)](#8-examples) |
+| 9 | [Project Structure](#9-project-structure) |
+|10 | [Testing](#10-testing) |
+|11 | [Troubleshooting](#11-troubleshooting) |
+|12 | [Contributing](#12-contributing) |
+|13 | [License](#13-license) |
 
 ---  
 
-## Prerequisites
-| Tool | Minimum Version | Why? |
-|------|----------------|------|
-| **Java JDK** | 11 (or higher) | Compile and run the servlet code |
-| **Apache Tomcat** | 9.0+ | Servlet container |
-| **MySQL Server** | 5.7+ | Database for persisting user data |
-| **Maven** (optional) | 3.6+ | Build automation (if you prefer Maven) |
-| **Git** | any | Clone the repository |
-| **IDE** (IntelliJ IDEA, Eclipse, VS Code, …) | – | Helpful for debugging, but not required |
+## 1. Project Overview  
 
-> **Tip:** If you prefer Gradle, the project also ships with a `build.gradle` file. The documentation below uses Maven commands, but you can replace them with the equivalent Gradle tasks (`./gradlew build`, `./gradlew war`).
+Mailbook is a **pure Java EE** web application that showcases the classic **Create‑Read‑Update‑Delete (CRUD)** workflow using:
+
+| Layer | Technology |
+|-------|------------|
+| **Presentation** | JSP, JSTL, Bootstrap 5 |
+| **Business / Data Access** | Servlets + JDBC |
+| **Persistence** | MySQL (via `mysql-connector-j`) |
+| **Build** | Maven (or Gradle – see the *Alternative Build* section) |
+| **Container** | Apache Tomcat 9+ (or any Servlet‑3.1+ container) |
+
+The app stores a simple `users` table with the fields **id**, **name**, **email**, **country**. All operations are performed through a clean UI and are also exposed as REST‑like endpoints for programmatic access.
 
 ---  
 
-## Installation  
+## 2. Prerequisites  
 
-### 1. Clone the repository
+| Tool | Minimum Version | Why |
+|------|----------------|-----|
+| **JDK** | 11 (or 17) | Language level, `var` support, modules |
+| **Maven** | 3.6.3 | Build & dependency management (or Gradle 7.x) |
+| **MySQL** | 5.7 / 8.0 | Database |
+| **Tomcat** | 9.0 (Servlet 4.0) | Servlet container |
+| **Git** | any | Clone the repo |
+| **Browser** | Chrome/Firefox/Edge | UI testing |
+
+> **Tip:** If you prefer Docker, see the *Docker Quick‑Start* section at the end of this file.
+
+---  
+
+## 3. Installation  
+
+### 3.1 Clone the repository  
+
 ```bash
-git clone https://github.com/your‑org/Mailbook.git
-cd Mailbook
+git clone https://github.com/your‑org/mailbook.git
+cd mailbook
 ```
 
-### 2. Set up the MySQL database  
-
-```sql
--- Connect to MySQL as a user with CREATE/DROP privileges
-CREATE DATABASE IF NOT EXISTS mailbook CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE mailbook;
-
-CREATE TABLE IF NOT EXISTS users (
-    id        INT AUTO_INCREMENT PRIMARY KEY,
-    name      VARCHAR(100) NOT NULL,
-    email     VARCHAR(150) NOT NULL UNIQUE,
-    country   VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-> **Optional:** Run the provided script `db/init.sql` (if present) to create the DB and table automatically:
-```bash
-mysql -u <user> -p < db/init.sql
-```
-
-### 3. Configure the DB connection  
-
-Edit `src/main/resources/db.properties` (or `WEB-INF/classes/db.properties` after the build) and set your MySQL credentials:
-
-```properties
-jdbc.driverClassName=com.mysql.cj.jdbc.Driver
-jdbc.url=jdbc:mysql://localhost:3306/mailbook?useSSL=false&serverTimezone=UTC
-jdbc.username=your_mysql_user
-jdbc.password=your_mysql_password
-```
-
-> **Security note:** Never commit real passwords. Add `db.properties` to `.gitignore` and keep a template file (`db.properties.example`) in the repo.
-
-### 4. Build the WAR file  
+### 3.2 Build the project  
 
 ```bash
 # Using Maven
 mvn clean package
 
-# The generated WAR will be at target/mailbook.war
+# The WAR file will be generated at:
+#   target/mailbook-<version>.war
 ```
 
-If you use Gradle:
+> **Alternative (Gradle)**  
+> ```bash
+> ./gradlew clean build
+> # WAR at build/libs/mailbook-<version>.war
+> ```
+
+### 3.3 Set up the MySQL database  
+
+```sql
+-- Connect as root (or a privileged user)
+CREATE DATABASE IF NOT EXISTS mailbook CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE mailbook;
+
+CREATE TABLE IF NOT EXISTS users (
+    id      INT AUTO_INCREMENT PRIMARY KEY,
+    name    VARCHAR(100) NOT NULL,
+    email   VARCHAR(150) NOT NULL UNIQUE,
+    country VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 3.4 Create a DB user (optional but recommended)  
+
+```sql
+CREATE USER 'mailbook_user'@'%' IDENTIFIED BY 'StrongPassword123!';
+GRANT ALL PRIVILEGES ON mailbook.* TO 'mailbook_user'@'%';
+FLUSH PRIVILEGES;
+```
+
+### 3.5 Deploy the WAR  
+
+Copy the generated WAR to Tomcat’s `webapps` directory (or use the Tomcat manager).
 
 ```bash
-./gradlew clean war
+cp target/mailbook-*.war $CATALINA_HOME/webapps/
 ```
 
-### 5. Deploy to Tomcat  
+Tomcat will automatically unpack the WAR and start the application.  
 
-Copy the generated `mailbook.war` to Tomcat’s `webapps` directory:
+---  
+
+## 4. Configuration  
+
+All configurable values live in **`src/main/resources/db.properties`** (which is copied to `WEB-INF/classes` at build time).  
+
+```properties
+# -------------------------------------------------
+# Database connection properties
+# -------------------------------------------------
+jdbc.driverClassName=com.mysql.cj.jdbc.Driver
+jdbc.url=jdbc:mysql://localhost:3306/mailbook?useSSL=false&serverTimezone=UTC
+jdbc.username=mailbook_user
+jdbc.password=StrongPassword123!
+```
+
+### 4.1 Overriding at runtime  
+
+You can override any property by defining a **system property** or an **environment variable** with the same name prefixed by `mailbook.`  
 
 ```bash
-cp target/mailbook.war $CATALINA_HOME/webapps/
+# Example: override DB URL
+export mailbook.jdbc.url=jdbc:mysql://dbhost:3306/mailbook?useSSL=true
 ```
 
-Tomcat will automatically explode the WAR and start the application.  
-
-> **Alternative (IDE):** Most IDEs let you add a Tomcat server and deploy the project directly from the IDE.
+Tomcat will pick up the values automatically because `DBUtil` reads them via `System.getProperty` first, then falls back to the properties file.
 
 ---  
 
-## Configuration  
+## 5. Running the Application  
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `jdbc.driverClassName` | Fully‑qualified driver class | `com.mysql.cj.jdbc.Driver` |
-| `jdbc.url` | JDBC URL (include DB name, timezone, SSL options) | `jdbc:mysql://localhost:3306/mailbook?useSSL=false&serverTimezone=UTC` |
-| `jdbc.username` | MySQL user | `root` |
-| `jdbc.password` | MySQL password | (empty) |
-| `app.contextPath` | Context path for the web app (usually `/mailbook`) | derived from WAR name |
-| `log.level` | Log4j/SLF4J level (`INFO`, `DEBUG`, …) | `INFO` |
+| URL | Description |
+|-----|-------------|
+| `http://localhost:8080/mailbook/` | Home page – list of users |
+| `http://localhost:8080/mailbook/create.jsp` | Form to add a new user |
+| `http://localhost:8080/mailbook/edit.jsp?id=5` | Edit user with id=5 |
+| `http://localhost:8080/mailbook/delete?id=5` | Delete user (GET for demo, POST in production) |
+| `http://localhost:8080/mailbook/api/users` | JSON list of all users (GET) |
+| `http://localhost:8080/mailbook/api/users` | Create a user (POST) |
+| `http://localhost:8080/mailbook/api/users/{id}` | Get / Update / Delete a single user (GET, PUT, DELETE) |
 
-You can also override any of these values with environment variables (Tomcat supports `JNDI` resources) – see the `README-ENV.md` file for details.
-
----  
-
-## Running the Application  
-
-1. **Start Tomcat**  
-
-   ```bash
-   $CATALINA_HOME/bin/startup.sh
-   ```
-
-2. **Verify deployment**  
-
-   Open a browser and navigate to:  
-
-   ```
-   http://localhost:8080/mailbook/
-   ```
-
-   You should see the **Mailbook Home** page with a table of existing users (empty on first run).
-
-3. **Stop Tomcat**  
-
-   ```bash
-   $CATALINA_HOME/bin/shutdown.sh
-   ```
+Open a browser and navigate to the home page to start using the UI.
 
 ---  
 
-## Usage (Web UI)  
+## 6. Usage (Web UI)  
 
-| Feature | UI Location | Description |
-|---------|-------------|-------------|
-| **List Users** | `/mailbook/` (home) | Shows a paginated table of all users. |
-| **Create User** | `/mailbook/create.jsp` | Form with fields: *Name*, *Email*, *Country*. Submits a POST to `/mailbook/UserCreateServlet`. |
-| **Edit User** | Click **Edit** on a row → `/mailbook/edit.jsp?id={id}` | Pre‑filled form; POSTs to `/mailbook/UserUpdateServlet`. |
-| **Delete User** | Click **Delete** on a row → `/mailbook/UserDeleteServlet?id={id}` | Confirmation dialog (JS) → GET request deletes the record. |
-| **Search** | Search box on home page | Filters the table by name/email (client‑side JS). |
+### 6.1 Create a user  
 
-> **Keyboard shortcuts** (optional):  
-> - `n` → Open *Create* dialog  
-> - `e` → Focus on *Edit* of the selected row  
+1. Click **“Add New User”** on the home page.  
+2. Fill **Name**, **Email**, **Country**.  
+3. Press **Save** – you’ll be redirected to the list view with a success toast.
+
+### 6.2 Edit a user  
+
+1. In the list, click the **pencil** icon next to the user you want to edit.  
+2. Update the fields and click **Update**.  
+
+### 6.3 Delete a user  
+
+1. Click the **trash** icon.  
+2. Confirm the JavaScript modal. The row disappears instantly (AJAX).  
+
+### 6.4 Search & Pagination  
+
+- The list page includes a **search box** (filters by name/email).  
+- Pagination is handled server‑side (10 rows per page).  
 
 ---  
 
-## API Documentation  
+## 7. API Documentation  
 
-The application also exposes a **REST‑like** API (JSON) for programmatic access. All endpoints are under the context path `/mailbook/api`.
+All API endpoints return **JSON** and use standard HTTP status codes.  
 
-| HTTP Method | Endpoint | Request Body / Params | Success Response | Error Responses |
-|-------------|----------|-----------------------|------------------|-----------------|
-| **GET** | `/api/users` | `?page=1&size=20` (optional) | `200 OK` <br>```json { "users": [...], "total": 42, "page":1, "size":20 }``` | `500` – DB error |
-| **GET** | `/api/users/{id}` | – | `200 OK` <br>```json { "id":1, "name":"John", "email":"john@example.com", "country":"USA" }``` | `404` – Not found |
-| **POST** | `/api/users` | ```json { "name":"...", "email":"...", "country":"..." }``` | `201 Created` <br>```json { "id": 12, "message":"User created"} ``` | `400` – Validation, `409` – Duplicate email |
-| **PUT** | `/api/users/{id}` | ```json { "name":"...", "email":"...", "country":"..." }``` | `200 OK` <br>```json { "message":"User updated"} ``` | `400`, `404` |
-| **DELETE** | `/api/users/{id}` | – | `204 No Content` | `404` |
+| Method | Endpoint | Request Body | Success Response | Error Responses |
+|--------|----------|--------------|------------------|-----------------|
+| **GET** | `/mailbook/api/users` | – | `200 OK` → `[{id, name, email, country, created_at}, …]` | `500` – DB error |
+| **GET** | `/mailbook/api/users/{id}` | – | `200 OK` → single user object | `404` – Not found |
+| **POST** | `/mailbook/api/users` | `{ "name":"John", "email":"john@example.com", "country":"USA" }` | `201 Created` → created user with generated `id` | `400` – validation, `409` – duplicate email |
+| **PUT** | `/mailbook/api/users/{id}` | Same as POST (any subset) | `200 OK` → updated user | `400`, `404` |
+| **DELETE** | `/mailbook/api/users/{id}` | – | `204 No Content` | `404` |
 
-### Servlet Mapping (web.xml excerpt)
+### 7.1 Common Headers  
+
+| Header | Value |
+|--------|-------|
+| `Content-Type` | `application/json` |
+| `Accept` | `application/json` |
+| `Cache-Control` | `no-cache` |
+
+### 7.2 Servlet Mapping (web.xml)  
 
 ```xml
 <servlet>
-    <servlet-name>UserListServlet</servlet-name>
-    <servlet-class>com.mailbook.servlet.UserListServlet</servlet-class>
+    <servlet-name>UserServlet</servlet-name>
+    <servlet-class>com.mailbook.servlet.UserServlet</servlet-class>
 </servlet>
+
 <servlet-mapping>
-    <servlet-name>UserListServlet</servlet-name>
-    <url-pattern>/api/users</url-pattern>
-</servlet-mapping>
-
-<!-- Similar mappings for Create, Update, Delete, etc. -->
-```
-
-### JSON Utility  
-
-All API responses are generated by `JsonResponseUtil` which uses **Jackson** (`com.fasterxml.jackson.databind.ObjectMapper`).  
-
-> **Note:** The UI still uses classic form posts (HTML) – the API is an extra convenience for integration tests or external clients.
-
----  
-
-## Examples  
-
-### 1. Using cURL (API)
-
-```bash
-# 1️⃣ List all users (first 10)
-curl -s http://localhost:808
